@@ -1,4 +1,3 @@
-
 ########################################################################
 ## Create RPX-100 project (Implementation of WRAN IEE802.22)
 ########################################################################
@@ -28,10 +27,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## export compiler settings to json for remote development
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library(functions STATIC functions.c functions.h common.h)
+add_library(functions STATIC functions.cpp functions.h common.h)
 target_link_libraries(functions Threads::Threads ZLIB::ZLIB)
 
-add_executable(receiver receiver.c receiver.h common.h)
-add_executable(sender sender.c sender.h common.h)
-target_link_libraries(receiver Threads::Threads ZLIB::ZLIB functions)
-target_link_libraries(sender Threads::Threads ZLIB::ZLIB functions)
+add_library(framer_receive STATIC framer_receive.cpp framer_receive.h common.h)
+target_link_libraries(framer_receive Threads::Threads ZLIB::ZLIB)
+
+add_library(framer_send STATIC framer_send.cpp framer_send.h common.h)
+target_link_libraries(framer_send Threads::Threads ZLIB::ZLIB)
+
+add_executable(framer framer.cpp framer.h common.h)
+target_link_libraries(framer Threads::Threads ZLIB::ZLIB functions framer_receive framer_send)
