@@ -1,20 +1,23 @@
 .PHONY: all clean
 
-CC = gcc
+CC = g++
 DEFS = -DDEBUG
-CFLAGS = -std=c99 -pedantic -Wall
-LIBS = -lz	#zlib required for crc32
+CFLAGS = -std=c++17 -pedantic -Wall -g -pthread
+LIBS = -lz
 
-all: sender receiver
+all: framer
 
-sender: sender.c sender.h functions.o common.h
-	$(CC) $(CFLAGS) -g -o $@ $< functions.o $(DEFS) $(LIBS)
+framer: framer.cpp framer.h common.h framer_send.o framer_receive.o functions.o
+	$(CC) $(CFLAGS) -o $@ $< functions.o framer_send.o framer_receive.o $(DEFS) $(LIBS)
 
-receiver: receiver.c receiver.h functions.o common.h
-	$(CC) $(CFLAGS) -g -o $@ $< functions.o $(DEFS) $(LIBS)
+framer_send.o: framer_send.cpp framer_send.h common.h
+	$(CC) $(CFLAGS) -c -o $@ $< $(DEFS) $(LIBS)
 
-functions.o: functions.c functions.h common.h
-	$(CC) $(CFLAGS) -g -c -o $@ $< $(DEFS) $(LIBS)
+framer_receive.o: framer_receive.cpp framer_receive.h common.h
+	$(CC) $(CFLAGS) -c -o $@ $< $(DEFS) $(LIBS)
+
+functions.o: functions.cpp functions.h common.h
+	$(CC) $(CFLAGS) -c -o $@ $< $(DEFS) $(LIBS)
 
 clean:
-	rm -rf sender receiver *.o
+	rm -rf framer *.o

@@ -6,13 +6,13 @@
 
 #define MAC_HEADER_LENGTH (32/8)
 #define MAC_CRC_LENGTH (32/8)
-#define FRAGMENTATION_HEADER_LENGTH (16/8)  //length is 2 bytes for a fragmentation subheader (3 Byte for packing subheader (which is not implemented))
+#define FRAGMENTATION_HEADER_LENGTH (16/8)  //length is 2 bytes for a fragmentation subheader (3 byte for packing subheader (which is not implemented))
 #define MINIMAL_PAYLOAD_LENGTH 2    //Number of MAC payload bytes a MAC PDU should contain at least, otherwise no MAC PDU will be added to the frame. Can be set to 0.
 
 
-//Bits in Fragmentation subheader
-#define PURPOSE_FRAGMENTATION 0
-#define FC_NO_FRAGMENTATION 0
+//Bits in fragmentation subheader
+#define PURPOSE_FRAGMENTATION 0x0
+#define FC_NO_FRAGMENTATION 0x0
 #define FC_LAST_FRAGMENT 0x1
 #define FC_FIRST_FRAGMENT 0x2
 #define FC_MIDDLE_FRAGMENT 0x3
@@ -23,14 +23,14 @@
 struct wran_frame_t
 {
     uint8_t data[WRAN_FRAME_LENGTH];
-    unsigned int length;    //Holds the maximum (sender) or actual (receiver) lenght of a WRAN frame
-    unsigned int next_index;   //Index of the next unprocessed byte in the array.
+    int length;    //Holds the maximum (sender) or actual (receiver) length of a WRAN frame
+    int next_index;   //Index of the next unprocessed byte in the array
 };
 
 struct sdu_t
 {
-    unsigned int length;    //Length of the sdu (sender), maximum length (receiver)
-    unsigned int next_index;   //Index of the next element in the array which has not been processed yet
+    int length;    //Actual (sender) or maximum (receiver) length of a SDU
+    int next_index;   //Index of the next element in the array which has not been processed yet
     uint8_t data[TUN_INTERFACE_MTU];
 };
 
@@ -61,5 +61,4 @@ enum fragmentation_state_t
 
 #define WRAN_FRAME_UNPROCESSED_BYTES (wran_frame.length - wran_frame.next_index)
 #define SDU_UNPROCESSED_BYTES (sdu.length - sdu.next_index)
-
 #endif
