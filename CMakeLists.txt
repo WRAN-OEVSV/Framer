@@ -33,8 +33,8 @@ target_link_libraries(functions Threads::Threads ZLIB::ZLIB)
 add_library(framer_receive STATIC framer_receive.cpp framer_receive.h common.h)
 target_link_libraries(framer_receive Threads::Threads ZLIB::ZLIB)
 
-add_library(framer_send STATIC framer_send.cpp framer_send.h common.h)
-target_link_libraries(framer_send Threads::Threads ZLIB::ZLIB)
+add_library(framer_transmit STATIC framer_transmit.cpp framer_transmit.h common.h)
+target_link_libraries(framer_transmit Threads::Threads ZLIB::ZLIB)
 
 add_executable(framer framer.cpp framer.h common.h)
-target_link_libraries(framer Threads::Threads ZLIB::ZLIB functions framer_receive framer_send)
+target_link_libraries(framer Threads::Threads ZLIB::ZLIB functions framer_receive framer_transmit)

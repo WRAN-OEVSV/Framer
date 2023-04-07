@@ -7,10 +7,10 @@ LIBS = -lz
 
 all: framer
 
-framer: framer.cpp framer.h common.h framer_send.o framer_receive.o functions.o
-	$(CC) $(CFLAGS) -o $@ $< functions.o framer_send.o framer_receive.o $(DEFS) $(LIBS)
+framer: framer.cpp framer.h common.h framer_transmit.o framer_receive.o functions.o
+	$(CC) $(CFLAGS) -o $@ $< functions.o framer_transmit.o framer_receive.o $(DEFS) $(LIBS)
 
-framer_send.o: framer_send.cpp framer_send.h common.h
+framer_transmit.o: framer_transmit.cpp framer_transmit.h common.h
 	$(CC) $(CFLAGS) -c -o $@ $< $(DEFS) $(LIBS)
 
 framer_receive.o: framer_receive.cpp framer_receive.h common.h

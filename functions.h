@@ -1,7 +1,7 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
-#include "common.h"
+#define CRC8_POLYNOMIAL 0x07
 
 extern char *program_name;  //Global variable for program name stored in argv[0]
 
