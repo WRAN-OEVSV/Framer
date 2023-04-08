@@ -1,12 +1,12 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define MAC_FRAME_LENGTH (2560 / 8)
+#define DS_US_BURST_LENGTH (2560 / 8)   //Length of the to be created / to be received DS or US bursts in bytes
 #define TUN_INTERFACE_MTU 1500
 
-#define MAC_PDU_HEADER_LENGTH (32 / 8)
-#define MAC_PDU_CRC_LENGTH (32 / 8)
-#define FRAGMENTATION_SUBHEADER_LENGTH (16 / 8) // length is 2 bytes for a fragmentation subheader (3 byte for packing subheader (which is not implemented))
+#define MAC_PDU_HEADER_LENGTH 4
+#define MAC_PDU_CRC_LENGTH 4
+#define FRAGMENTATION_SUBHEADER_LENGTH 2 // length is 2 bytes for a fragmentation subheader (3 byte for packing subheader (which is not implemented))
 #define MINIMUM_MAC_PDU_LENGTH 4                // Minimal size of a MAC PDU (according to IEEE 802.22 a PDU shall be discarded if its length is smaller than 4 bytes)
 #define MINIMUM_PAYLOAD_LENGTH 2                // Number of payload bytes a MAC PDU should contain at least, otherwise no MAC PDU will be added to the frame. Can be set to 0.
 
@@ -17,12 +17,13 @@
 #define FC_FIRST_FRAGMENT 0x2
 #define FC_MIDDLE_FRAGMENT 0x3
 
-// MAC subheaders (according to IEE 802.22 Table 7)
+// MAC PDU subheaders (according to IEE 802.22 Table 7)
 #define SUBHEADER_FRAGMENTATION 0x1
 
-struct MAC_frame_t
+//Struct for the created / received DS/US burst
+struct DS_US_burst_t
 {
-    uint8_t data[MAC_FRAME_LENGTH];
+    uint8_t data[DS_US_BURST_LENGTH];
     int next_index; // Index of the next unprocessed byte in the array
 };
 
@@ -58,6 +59,6 @@ enum fragmentation_state_t
     NOT_FRAGMENTED,
 };
 
-#define MAC_FRAME_UNPROCESSED_BYTES (MAC_FRAME_LENGTH - MAC_frame.next_index)
+#define DS_US_BURST_UNPROCESSED_BYTES (DS_US_BURST_LENGTH - DS_US_burst.next_index)
 #define SDU_UNPROCESSED_BYTES (sdu.length - sdu.next_index)
 #endif

@@ -8,7 +8,7 @@ class Framer_receive
 {
     int fd_tun = 0;
     struct sdu_t sdu = {0};
-    struct MAC_frame_t MAC_frame = {0};
+    struct DS_US_burst_t DS_US_burst = {0};
     struct MAC_PDU_header_t MAC_PDU_header = {0};
     struct fragmentation_subheader_t fragmentation_subheader = {0};
     enum fragmentation_state_t fragmentation_state = NOT_FRAGMENTED;
@@ -16,8 +16,8 @@ class Framer_receive
     int sequence_number = 0;
     int subheaders_length = 0;
     
-    int read_MAC_frame_from_WRAN_interface();
-    void process_MAC_frame();
+    int read_DS_US_burst_from_WRAN_interface();
+    void process_DS_US_burst();
     int decode_MAC_PDU_header();
     int check_crc32();
     int decode_subheaders();

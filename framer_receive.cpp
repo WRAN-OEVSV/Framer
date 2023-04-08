@@ -11,12 +11,12 @@ void Framer_receive::operator()()
 {
     while (1)
     {
-        if (read_MAC_frame_from_WRAN_interface() == -1)
+        if (read_DS_US_burst_from_WRAN_interface() == -1)
         {
             return;
         }
 
-        process_MAC_frame();
+        process_DS_US_burst();
     }
 }
 
@@ -26,23 +26,24 @@ Framer_receive::Framer_receive(int fd_tun)
     sdu.length = TUN_INTERFACE_MTU;
 }
 
-int Framer_receive::read_MAC_frame_from_WRAN_interface()
+int Framer_receive::read_DS_US_burst_from_WRAN_interface()
 {
     // TODO: Interface with existing application
-    // Receiver should block until a MAC frame can be read from WRAN
-    // MAC_frame.data = ...
+    // Receiver should block until a DS/US burst can be read from WRAN
+    // DS_US_burst.data = ...
 
-    MAC_frame.next_index = 0;
+
+    DS_US_burst.next_index = 0;
     return 0;
 }
 
-void Framer_receive::process_MAC_frame()
+void Framer_receive::process_DS_US_burst()
 {
-    while (MAC_FRAME_UNPROCESSED_BYTES > 0)
+    while (DS_US_BURST_UNPROCESSED_BYTES > 0)
     {
-        MAC_PDU_start_index = MAC_frame.next_index;
+        MAC_PDU_start_index = DS_US_burst.next_index;
 
-        if (MAC_FRAME_LENGTH - MAC_frame.next_index < MINIMUM_MAC_PDU_LENGTH || (decode_MAC_PDU_header() == 0) || (MAC_PDU_header.length < MINIMUM_MAC_PDU_LENGTH) || (MAC_PDU_header.length > MAC_FRAME_UNPROCESSED_BYTES + MAC_PDU_HEADER_LENGTH)) // Skip entire MAC frame if MAC Header checksum incorrect or length of the MAC PDU invalid.
+        if (DS_US_BURST_LENGTH - DS_US_burst.next_index < MINIMUM_MAC_PDU_LENGTH || (decode_MAC_PDU_header() == 0) || (MAC_PDU_header.length < MINIMUM_MAC_PDU_LENGTH) || (MAC_PDU_header.length > DS_US_BURST_UNPROCESSED_BYTES + MAC_PDU_HEADER_LENGTH)) // Skip entire DS/US burst if MAC Header checksum incorrect or length of the MAC PDU invalid.
         {
             break;
         }
@@ -59,26 +60,26 @@ void Framer_receive::process_MAC_frame()
 
 int Framer_receive::decode_MAC_PDU_header()
 {
-    MAC_PDU_header.length = (MAC_frame.data[MAC_frame.next_index] << 3) | ((MAC_frame.data[MAC_frame.next_index + 1] & 0xE0) >> 5);
-    ++(MAC_frame.next_index);
-    MAC_PDU_header.UCS = (MAC_frame.data[MAC_frame.next_index] & 0x10) >> 4;
-    MAC_PDU_header.QPA = (MAC_frame.data[MAC_frame.next_index] & 0x08) >> 3;
-    MAC_PDU_header.EC = (MAC_frame.data[MAC_frame.next_index] & 0x04) >> 2;
-    MAC_PDU_header.EKS = (MAC_frame.data[MAC_frame.next_index] & 0x03);
-    ++(MAC_frame.next_index);
-    MAC_PDU_header.Type = (MAC_frame.data[MAC_frame.next_index] & 0xF8) >> 3;
-    MAC_PDU_header.FT = (MAC_frame.data[MAC_frame.next_index] & 0x07);
-    ++(MAC_frame.next_index);
-    ++(MAC_frame.next_index);
-    MAC_PDU_header.HCS_valid = (crc8(MAC_frame.data + MAC_PDU_start_index, MAC_PDU_HEADER_LENGTH) == 0);
+    MAC_PDU_header.length = (DS_US_burst.data[DS_US_burst.next_index] << 3) | ((DS_US_burst.data[DS_US_burst.next_index + 1] & 0xE0) >> 5);
+    ++(DS_US_burst.next_index);
+    MAC_PDU_header.UCS = (DS_US_burst.data[DS_US_burst.next_index] & 0x10) >> 4;
+    MAC_PDU_header.QPA = (DS_US_burst.data[DS_US_burst.next_index] & 0x08) >> 3;
+    MAC_PDU_header.EC = (DS_US_burst.data[DS_US_burst.next_index] & 0x04) >> 2;
+    MAC_PDU_header.EKS = (DS_US_burst.data[DS_US_burst.next_index] & 0x03);
+    ++(DS_US_burst.next_index);
+    MAC_PDU_header.Type = (DS_US_burst.data[DS_US_burst.next_index] & 0xF8) >> 3;
+    MAC_PDU_header.FT = (DS_US_burst.data[DS_US_burst.next_index] & 0x07);
+    ++(DS_US_burst.next_index);
+    ++(DS_US_burst.next_index);
+    MAC_PDU_header.HCS_valid = (crc8(DS_US_burst.data + MAC_PDU_start_index, MAC_PDU_HEADER_LENGTH) == 0);
     return MAC_PDU_header.HCS_valid;
 }
 
 int Framer_receive::check_crc32()
 {
-    uint32_t crc = crc32(0, MAC_frame.data + MAC_PDU_start_index, MAC_PDU_header.length - MAC_PDU_CRC_LENGTH);
+    uint32_t crc = crc32(0, DS_US_burst.data + MAC_PDU_start_index, MAC_PDU_header.length - MAC_PDU_CRC_LENGTH);
     crc = htonl(crc); // Convert to network byte order (Big Endian; MSB first) in order to compare it with the CRC in the MAC PDU
-    return (crc == *((uint32_t *)(MAC_frame.data + MAC_PDU_start_index + MAC_PDU_header.length - MAC_PDU_CRC_LENGTH)));
+    return (crc == *((uint32_t *)(DS_US_burst.data + MAC_PDU_start_index + MAC_PDU_header.length - MAC_PDU_CRC_LENGTH)));
 }
 
 int Framer_receive::decode_subheaders()
@@ -102,11 +103,11 @@ int Framer_receive::decode_subheaders()
 
 void Framer_receive::decode_fragmentation_subheader()
 {
-    fragmentation_subheader.Purpose = (MAC_frame.data[MAC_frame.next_index] & 0x80) >> 7;
-    fragmentation_subheader.FC = (MAC_frame.data[MAC_frame.next_index] & 0x60) >> 5;
-    fragmentation_subheader.FSN = ((MAC_frame.data[MAC_frame.next_index] & 0x1F) << 5) | ((MAC_frame.data[MAC_frame.next_index + 1] & 0xF8) >> 3);
-    ++(MAC_frame.next_index);
-    ++(MAC_frame.next_index);
+    fragmentation_subheader.Purpose = (DS_US_burst.data[DS_US_burst.next_index] & 0x80) >> 7;
+    fragmentation_subheader.FC = (DS_US_burst.data[DS_US_burst.next_index] & 0x60) >> 5;
+    fragmentation_subheader.FSN = ((DS_US_burst.data[DS_US_burst.next_index] & 0x1F) << 5) | ((DS_US_burst.data[DS_US_burst.next_index + 1] & 0xF8) >> 3);
+    ++(DS_US_burst.next_index);
+    ++(DS_US_burst.next_index);
 }
 
 void Framer_receive::decode_MAC_PDU()
@@ -207,13 +208,13 @@ int Framer_receive::append_MAC_PDU_payload_to_SDU()
 
     for (int i = 0; i < SDU_length; ++i)
     {
-        sdu.data[(sdu.next_index)++] = MAC_frame.data[(MAC_frame.next_index)++];
+        sdu.data[(sdu.next_index)++] = DS_US_burst.data[(DS_US_burst.next_index)++];
     }
-    skip_MAC_PDU(); // Set MAC_frame.next_index to beginning of next PDU
+    skip_MAC_PDU(); // Set DS_US_burst.next_index to beginning of next PDU
     return 1;
 }
 
 void Framer_receive::skip_MAC_PDU()
 {
-    MAC_frame.next_index = MAC_PDU_start_index + MAC_PDU_header.length;
+    DS_US_burst.next_index = MAC_PDU_start_index + MAC_PDU_header.length;
 }

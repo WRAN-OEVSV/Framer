@@ -16,18 +16,18 @@ class Framer_transmit
     uint8_t subheaders_present = 0;
     uint8_t fragmentation_subheader = 0;
     struct sdu_t sdu = {0};
-    struct MAC_frame_t MAC_frame = {0};
+    struct DS_US_burst_t DS_US_burst = {0};
     enum fragmentation_state_t fragmentation_state = NOT_FRAGMENTED;
 
-    int read_TUN_interface();
-    void generate_and_send_MAC_frame();
-    int send_MAC_frame_to_WRAN_interface();
-    void add_SDU_to_MAC_frame();
+    int read_SDU_from_TUN_interface();
+    void generate_and_send_DS_US_burst();
+    int send_DS_US_burst_to_WRAN_interface();
+    void add_SDU_to_DS_US_burst();
     void append_MAC_PDU_header();
     void append_fragmentation_subheader();
     void append_MAC_PDU();
     void append_MAC_PDU_CRC();
-    int check_if_TUN_blocks();
+    int check_if_TUN_interface_blocks();
 
 public:
     void operator()();
