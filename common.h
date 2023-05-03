@@ -18,7 +18,7 @@
 #define FC_MIDDLE_FRAGMENT 0x3
 
 // MAC PDU subheaders (according to IEE 802.22 Table 7)
-#define SUBHEADER_FRAGMENTATION 0x1
+#define SUBHEADER_FRAGMENTATION 0x2
 
 //Struct for the created / received DS/US burst
 struct DS_US_burst_t
