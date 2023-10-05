@@ -62,7 +62,7 @@ void Framer_transmit::generate_and_send_DS_US_burst()
         else if (DS_US_BURST_UNPROCESSED_BYTES >= MAC_PDU_HEADER_LENGTH + MAC_PDU_CRC_LENGTH + subheaders_length) // Append PDU only containing headers
         {
             // Subheaders not implemented yet.
-            // TODO: Append subheaders if required
+            // TODO: Append subheaders if required (e.g. for ARQ, US bandwidth request/grant)
 
             send_DS_US_burst_to_WRAN_interface();
         }
@@ -74,6 +74,7 @@ void Framer_transmit::generate_and_send_DS_US_burst()
 
     if (check_if_TUN_interface_blocks() == 1) // If calling read() on the TUN interface would block send WRAN frame even if it is not full yet
     {
+        // TODO: Check whether the physical layer is ready to receive a DS/US burst -> Only send DS/US burst if TUN interface blocks and PHY ready to receive a DS/US burst
         send_DS_US_burst_to_WRAN_interface();
     }
 }
@@ -82,8 +83,6 @@ int Framer_transmit::send_DS_US_burst_to_WRAN_interface()
 {
     // TODO: Interface with existing application
     // Unused bytes in the DS_US_burst.data array must be padded with 0.
-
-
 
     std::cout << program_name << " Sending " << DS_US_burst.next_index << " bytes to WRAN interface" << std::endl;
     for (int i = 0; i < DS_US_burst.next_index; ++i)
@@ -126,7 +125,6 @@ void Framer_transmit::append_MAC_PDU_header()
     DS_US_burst.data[(DS_US_burst.next_index)++] = ((PDU_length & 0x0007) << 5) | (MAC_PDU_header.UCS << 4) | (MAC_PDU_header.QPA << 3) | (MAC_PDU_header.EC << 2) | (MAC_PDU_header.EKS << 0);
     DS_US_burst.data[(DS_US_burst.next_index)++] = (subheaders_present << 3) | (MAC_PDU_header.FT);
     DS_US_burst.data[(DS_US_burst.next_index)++] = crc8(DS_US_burst.data + start_index, 3);
-    return;
 }
 
 void Framer_transmit::append_fragmentation_subheader()
@@ -135,7 +133,6 @@ void Framer_transmit::append_fragmentation_subheader()
     DS_US_burst.data[(DS_US_burst.next_index)++] = (PURPOSE_FRAGMENTATION << 7) | (fragmentation_subheader << 5) | ((sequence_number & 0x3E0) >> 5);
     DS_US_burst.data[(DS_US_burst.next_index)++] = ((sequence_number & 0x1F) << 3);
     sequence_number = (sequence_number + 1) % 1024;
-    return;
 }
 
 void Framer_transmit::append_MAC_PDU()
@@ -153,7 +150,8 @@ void Framer_transmit::append_MAC_PDU()
 
 void Framer_transmit::append_MAC_PDU_CRC()
 {
-    uint32_t crc = crc32(0, DS_US_burst.data + current_PDU_start_index, DS_US_burst.next_index - current_PDU_start_index);
+    uint32_t crc = crc32(0L, Z_NULL, 0); // Get required initial value of crc32() function cf. https://zlib.net/manual.html
+    crc = crc32(crc, DS_US_burst.data + current_PDU_start_index, DS_US_burst.next_index - current_PDU_start_index);
     crc = htonl(crc); // Convert to network byte order (Big Endian; MSB first) as required by IEEE 802.22.
 
     *(uint32_t *)(DS_US_burst.data + DS_US_burst.next_index) = crc;
@@ -174,5 +172,5 @@ int Framer_transmit::check_if_TUN_interface_blocks()
             return 1;
         }
     }
-    return ((pollfd.revents & POLLIN) == 0);
+    return ((pollfd.revents & POLLIN) == 0);    //Return 1 if a read access to the TUN interface would block
 }

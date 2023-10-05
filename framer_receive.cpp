@@ -32,7 +32,6 @@ int Framer_receive::read_DS_US_burst_from_WRAN_interface()
     // Receiver should block until a DS/US burst can be read from WRAN
     // DS_US_burst.data = ...
 
-
     DS_US_burst.next_index = 0;
     return 0;
 }
@@ -43,7 +42,7 @@ void Framer_receive::process_DS_US_burst()
     {
         MAC_PDU_start_index = DS_US_burst.next_index;
 
-        if (DS_US_BURST_LENGTH - DS_US_burst.next_index < MINIMUM_MAC_PDU_LENGTH || (decode_MAC_PDU_header() == 0) || (MAC_PDU_header.length < MINIMUM_MAC_PDU_LENGTH) || (MAC_PDU_header.length > DS_US_BURST_UNPROCESSED_BYTES + MAC_PDU_HEADER_LENGTH)) // Skip entire DS/US burst if MAC Header checksum incorrect or length of the MAC PDU invalid.
+        if ((DS_US_BURST_LENGTH - DS_US_burst.next_index < MINIMUM_MAC_PDU_LENGTH) || (decode_MAC_PDU_header() == 0) || (MAC_PDU_header.length < MINIMUM_MAC_PDU_LENGTH) || (MAC_PDU_header.length > DS_US_BURST_UNPROCESSED_BYTES + MAC_PDU_HEADER_LENGTH)) // Skip entire DS/US burst if MAC Header checksum incorrect or length of the MAC PDU invalid.
         {
             break;
         }
@@ -77,7 +76,8 @@ int Framer_receive::decode_MAC_PDU_header()
 
 int Framer_receive::check_crc32()
 {
-    uint32_t crc = crc32(0, DS_US_burst.data + MAC_PDU_start_index, MAC_PDU_header.length - MAC_PDU_CRC_LENGTH);
+    uint32_t crc = crc32(0L, Z_NULL, 0); // Get required initial value of crc32() function cf. https://zlib.net/manual.html
+    crc = crc32(crc, DS_US_burst.data + MAC_PDU_start_index, MAC_PDU_header.length - MAC_PDU_CRC_LENGTH);
     crc = htonl(crc); // Convert to network byte order (Big Endian; MSB first) in order to compare it with the CRC in the MAC PDU
     return (crc == *((uint32_t *)(DS_US_burst.data + MAC_PDU_start_index + MAC_PDU_header.length - MAC_PDU_CRC_LENGTH)));
 }
@@ -134,11 +134,11 @@ void Framer_receive::decode_MAC_PDU()
 
     case FC_MIDDLE_FRAGMENT:
         sequence_number = (sequence_number + 1) % 1024;
-        if (fragmentation_state == FRAGMENTED && fragmentation_subheader.FSN == sequence_number)
+        if (fragmentation_state == FRAGMENTED && fragmentation_subheader.FSN == sequence_number) // Add PDU to SDU
         {
             append_MAC_PDU_payload_to_SDU();
         }
-        else
+        else // Skip this PDU
         {
             fragmentation_state = NOT_FRAGMENTED;
             skip_MAC_PDU();
@@ -210,6 +210,7 @@ int Framer_receive::append_MAC_PDU_payload_to_SDU()
     {
         sdu.data[(sdu.next_index)++] = DS_US_burst.data[(DS_US_burst.next_index)++];
     }
+
     skip_MAC_PDU(); // Set DS_US_burst.next_index to beginning of next PDU
     return 1;
 }

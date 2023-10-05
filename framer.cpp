@@ -3,6 +3,7 @@
 #include <thread>
 #include <unistd.h>
 
+#include "framer.h"
 #include "common.h"
 #include "functions.h"
 #include "framer_receive.h"
@@ -15,7 +16,6 @@ int main(int argc, char **argv)
     int fd_tun = 0;
     program_name = argv[0];
 
-    // TODO: Proper initialization of TUN interface
     fd_tun = open_tun_interface();
     if (fd_tun < 0)
     {

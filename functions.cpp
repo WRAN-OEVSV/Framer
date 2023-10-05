@@ -18,35 +18,24 @@
 
 int open_tun_interface()
 {
+    // TUN interface has to be created and configured outside the application e.g., via systemd-network
+
+
     int fd_tun = open("/dev/net/tun", O_RDWR);
     if (fd_tun == -1)
     {
-        std::cerr << program_name << " Cannot open TUN interface " << std::endl;
+        std::cerr << program_name << " Cannot open TUN interface: " << strerror(errno) << std::endl;
         return -1;
     }
 
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-    strncpy(ifr.ifr_name, "tun_wran", IFNAMSIZ);
+    strncpy(ifr.ifr_name, TUN_INTERFACE_NAME, IFNAMSIZ);
     int res = ioctl(fd_tun, TUNSETIFF, &ifr);
     if (res == -1)
     {
-        std::cerr << program_name << " Cannot open TUN interface" << std::endl;
-        return -1;
-    }
-
-    // TODO: Replace system() with appropriate ioctl() calls if required.
-    if (system("sudo ip addr add 192.168.2.1/24 dev tun_wran") < 0)
-    {
-        return -1;
-    }
-    if (system("sudo ip link set dev tun_wran mtu 1500") < 0)
-    {
-        return -1;
-    }
-    if (system("sudo ip link set up dev tun_wran") < 0)
-    {
+        std::cerr << program_name << " Cannot configure TUN interface: " << strerror(errno) << std::endl;
         return -1;
     }
 
@@ -61,7 +50,7 @@ uint8_t crc8(const uint8_t *data, size_t size)
     {
         for (int j = 7; j >= 0; --j) // For each bit in the byte
         {
-            b = (i == size) ? 0 : ((data[i] >> j) & 0x01); //Return 0 in the last iteration of the outer loop (to simulate the appended zero-byte)
+            b = (i == size) ? 0 : ((data[i] >> j) & 0x01); // Return 0 in the last iteration of the outer loop (to simulate the appended zero-byte)
             crc = ((crc & 0x80) != 0) ? (((crc << 1) + b) ^ CRC8_POLYNOMIAL) : ((crc << 1) + b);
         }
     }
